@@ -12,8 +12,8 @@ import config
 gql_transport = None
 gql_client = None
 opposite_tariff = {
-    "AGILE": "GO",
-    "GO": "AGILE"
+    "AGILE": "COSY",
+    "COSY": "AGILE"
 }
 
 token_query = """mutation {{
@@ -148,8 +148,8 @@ def get_acc_info():
                             for agreement in result['account']['electricityAgreements']
                             if 'standingCharge' in agreement['tariff'])
 
-    if "GO" in tariff_code:
-        current_tariff = "GO"
+    if "COSY" in tariff_code:
+        current_tariff = "COSY"
     elif "AGILE" in tariff_code:
         current_tariff = "AGILE"
     else:
@@ -168,7 +168,7 @@ def get_potential_tariff_rates(tariff, region_code):
     all_products = rest_query(f"{config.BASE_URL}/products")
     tariff_code = next(
         product["code"] for product in all_products['results']
-        if product['display_name'] == ("Agile Octopus" if tariff == "AGILE" else "Octopus Go")
+        if product['display_name'] == ("Agile Octopus" if tariff == "AGILE" else "Octopus Cosy")
         and product['direction'] == "IMPORT"
         and product['brand'] == "OCTOPUS_ENERGY"
     )
