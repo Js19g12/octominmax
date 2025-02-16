@@ -3,7 +3,7 @@ version: '3.8'
 services:
   minmax_octopus_bot:
     container_name: MinMaxOctopusBot
-    image: eelmafia/octopus-minmax-bot
+    image: js19g12/octominmax
     restart: unless-stopped
     environment:
       - ACC_NUMBER=<your_account_number>
