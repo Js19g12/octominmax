@@ -278,8 +278,8 @@ def setup_gql(token):
 
 
 def compare_and_switch():
-    send_discord_message("Octobot on. You are currently on " + current_tariff + ". Starting comparison of today's costs...")
     (curr_tariff, curr_stdn_charge, region_code, consumption) = get_acc_info()
+    send_discord_message("Octobot on. You are currently on " + current_tariff + ". Starting comparison of today's costs...")
     total_curr_cost = sum(float(entry['costDeltaWithTax']) for entry in consumption) + curr_stdn_charge
 
     (potential_std_charge, potential_unit_rates) = get_potential_tariff_rates(opposite_tariff[curr_tariff], region_code)
