@@ -11,10 +11,10 @@ import config
 
 gql_transport = None
 gql_client = None
-opposite_tariff = {
-    "AGILE": "COSY",
-    "COSY": "AGILE"
-}
+
+# List of potential tariffs to compare
+potential_tariffs = ["AGILE", "GO", "COSY"]
+# GraphQL queries and mutations
 
 token_query = """mutation {{
 	obtainKrakenToken(input: {{ APIKey: "{api_key}" }}) {{
@@ -168,7 +168,7 @@ def get_potential_tariff_rates(tariff, region_code):
     all_products = rest_query(f"{config.BASE_URL}/products")
     tariff_code = next(
         product["code"] for product in all_products['results']
-        if product['display_name'] == ("Agile Octopus" if tariff == "AGILE" else "Octopus Cosy")
+        if product['display_name'] == ("Agile Octopus" if tariff == "AGILE" else "Octopus Go" if tariff == "GO" else "Cosy Octopus")
         and product['direction'] == "IMPORT"
         and product['brand'] == "OCTOPUS_ENERGY"
     )
@@ -247,6 +247,9 @@ def switch_tariff(target_tariff):
         page.wait_for_timeout(1000)
         page.get_by_placeholder("Password").press("Enter")
         page.wait_for_timeout(1000)
+	# Website is different for COSY tariff
+        if target_tariff == "COSY":
+            page.goto(f"https://octopus.energy/smart/cosy-octopus/sign-up/?accountNumber={config.ACC_NUMBER}")
         # replace with env
         page.goto(f"https://octopus.energy/smart/{target_tariff.lower()}/sign-up/?accountNumber={config.ACC_NUMBER}")
         page.wait_for_timeout(10000)
@@ -281,18 +284,25 @@ def compare_and_switch():
     (curr_tariff, curr_stdn_charge, region_code, consumption) = get_acc_info()
     send_discord_message("Octobot on. You are currently on " + current_tariff + ". Starting comparison of today's costs...")
     total_curr_cost = sum(float(entry['costDeltaWithTax']) for entry in consumption) + curr_stdn_charge
-
-    (potential_std_charge, potential_unit_rates) = get_potential_tariff_rates(opposite_tariff[curr_tariff], region_code)
-
-    potential_costs = calculate_potential_costs(consumption, potential_unit_rates)
-
-    total_potential_calculated = sum(period['calculated_cost'] for period in potential_costs) + potential_std_charge
-    summary = "Total potential cost: £{:.2f} vs current cost: £{:.2f}".format(total_potential_calculated / 100,
-                                                                              total_curr_cost / 100)
-    # 2p buffer because cba
-    if (total_potential_calculated + 2) < total_curr_cost:
-        send_discord_message(summary + "\nInitiating Switch to " + opposite_tariff[curr_tariff])
-        switch_tariff(opposite_tariff[curr_tariff])
+    send_discord_message(f"Current cost on {curr_tariff}: £{total_curr_cost / 100:.2f}")
+    best_tariff = curr_tariff
+    best_cost = total_curr_cost
+    for tariff in potential_tariffs:
+        if tariff == curr_tariff:
+            continue
+        potential_std_charge, potential_unit_rates = get_potential_tariff_rates(tariff, region_code)
+        potential_costs = calculate_potential_costs(consumption, potential_unit_rates)
+        total_potential_calculated = sum(period['calculated_cost'] for period in potential_costs) + potential_std_charge
+        send_discord_message(f"Potential cost on {tariff}: £{total_potential_calculated / 100:.2f}")
+        if total_potential_calculated < best_cost:
+            best_tariff = tariff
+            best_cost = total_potential_calculated
+    summary = f"Best potential cost on {best_tariff}: £{best_cost / 100:.2f} vs your current cost on {curr_tariff}: £{total_curr_cost / 100:.2f}"
+    if config.DRY_RUN:
+        send_discord_message("DRY RUN: " + summary)
+    elif best_tariff != curr_tariff:
+        send_discord_message(summary + f"\nInitiating Switch to {best_tariff}")
+        switch_tariff(best_tariff)
         send_discord_message("Tariff switch requested successfully.")
         # Give octopus some time to generate the agreement
         time.sleep(60)
