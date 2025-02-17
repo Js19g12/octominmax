@@ -12,3 +12,5 @@ EXECUTION_TIME = os.getenv("EXECUTION_TIME", "23:00")
 
 # Whether to just run immediately and exit
 ONE_OFF_RUN = os.getenv("ONE_OFF", "false") in ["true", "True", "1"]
+# Will only report the results and not change tarrif
+DRY_RUN = os.getenv("DRY_RUN", "false") in ["true", "True", "1"]
