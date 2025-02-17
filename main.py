@@ -284,7 +284,7 @@ def setup_gql(token):
 
 def compare_and_switch():
     (curr_tariff, curr_stdn_charge, region_code, consumption) = get_acc_info()
-    send_discord_message("Octobot on. You are currently on " + current_tariff + ". Starting comparison of today's costs...")
+    send_discord_message("Octobot on. You are currently on " + curr_tariff + ". Starting comparison of today's costs...")
     total_curr_cost = sum(float(entry['costDeltaWithTax']) for entry in consumption) + curr_stdn_charge
     send_discord_message(f"Current cost on {curr_tariff}: £{total_curr_cost / 100:.2f}")
     best_tariff = curr_tariff
