@@ -148,11 +148,13 @@ def get_acc_info():
                             for agreement in result['account']['electricityAgreements']
                             if 'standingCharge' in agreement['tariff'])
 
-    if "COSY" in tariff_code:
-        current_tariff = "COSY"
-    elif "AGILE" in tariff_code:
-        current_tariff = "AGILE"
-    else:
+    current_tariff = None
+    for tariff in potential_tariffs:
+        if tariff in tariff_code:
+            current_tariff = tariff
+            break
+
+    if current_tariff is None:
         raise Exception(f"ERROR: Unknown tariff code: {tariff_code}")
 
     # Get consumption for today
